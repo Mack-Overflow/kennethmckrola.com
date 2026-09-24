@@ -1,0 +1,65 @@
+name: Deploy site
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Syndicate to dev.to
+        env:
+          DEVTO_API_KEY: ${{ secrets.DEVTO_API_KEY }}
+          NUXT_PUBLIC_SITE_URL: https://kennethmckrola.com
+        run: node scripts/publish-devto.mjs
+
+      - name: Commit dev.to metadata back
+        run: |
+          if ! git diff --quiet -- content/articles; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add content/articles
+            git commit -m "chore: sync dev.to metadata [skip ci]"
+            git push
+          fi
+
+      - name: Generate static site
+        env:
+          NUXT_PUBLIC_SITE_URL: https://kennethmckrola.com
+          NODE_OPTIONS: --max-old-space-size=4096
+        run: npx nuxt generate
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: .output/public
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
