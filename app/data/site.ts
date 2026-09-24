@@ -34,8 +34,10 @@ export const projects: Project[] = [
     name: 'OAuth Toolkit',
     blurb:
       'A browser-based toolkit for testing OAuth2 / SSO configurations: plug in a client config, walk the full authorization flow, inspect and validate the returned tokens, and pull the user profile. Built with Nuxt.',
+    live: 'https://oauth.kennethmckrola.com',
     repo: 'https://github.com/Mack-Overflow/oauth-toolkit',
     tags: ['oauth2', 'sso', 'nuxt', 'security'],
+    featured: true,
   },
   {
     name: 'Reactor Designs',
