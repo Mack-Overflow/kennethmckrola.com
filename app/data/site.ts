@@ -30,4 +30,11 @@ export const projects: Project[] = [
     tags: ['go', 'cli', 'mcp', 'performance', 'devops'],
     featured: true,
   },
+  {
+    name: 'OAuth Toolkit',
+    blurb:
+      'A browser-based toolkit for testing OAuth2 / SSO configurations: plug in a client config, walk the full authorization flow, inspect and validate the returned tokens, and pull the user profile. Built with Nuxt.',
+    repo: 'https://github.com/Mack-Overflow/oauth-toolkit',
+    tags: ['oauth2', 'sso', 'nuxt', 'security'],
+  },
 ]
