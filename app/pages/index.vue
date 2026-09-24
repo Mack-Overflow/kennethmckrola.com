@@ -6,13 +6,7 @@ useSeoMeta({
   description: 'Technical challenges, write-ups, and projects from Kenneth McKrola.',
 })
 
-const { data: articles } = await useAsyncData('home-articles', () =>
-  queryCollection('articles').where('draft', '=', false).order('date', 'DESC').limit(6).all(),
-)
-const { data: devto } = await useDevtoArticles()
-const config = useRuntimeConfig()
-// Hide dev.to posts whose canonical already points here (they show up as local articles).
-const devtoExternal = computed(() => (devto.value || []).filter((a) => !a.canonical_url?.startsWith(config.public.siteUrl)).slice(0, 6))
+const feed = await useArticleFeed(6)
 </script>
 
 <template>
@@ -29,9 +23,9 @@ const devtoExternal = computed(() => (devto.value || []).filter((a) => !a.canoni
 
     <section class="section container lazy-block">
       <h2 v-reveal class="section-title">technical challenges <small><NuxtLink to="/articles">all articles →</NuxtLink></small></h2>
-      <div v-if="articles?.length" class="tiles">
-        <ArticleTile v-for="(a, i) in articles" :key="a.path" :to="a.path" :title="a.title" :description="a.description"
-          :date="a.date" :tags="a.tags" :kind="a.kind" :delay="i * 70" />
+      <div v-if="feed.length" class="tiles">
+        <ArticleTile v-for="(a, i) in feed" :key="a.key" :to="a.to" :title="a.title" :description="a.description"
+          :date="a.date" :tags="a.tags" :kind="a.kind" :external="a.external" :delay="i * 70" />
       </div>
       <p v-else v-reveal class="muted">nothing published yet. check back soon.</p>
     </section>
@@ -43,13 +37,6 @@ const devtoExternal = computed(() => (devto.value || []).filter((a) => !a.canoni
       </div>
     </section>
 
-    <section v-if="devtoExternal.length" class="section container lazy-block">
-      <h2 v-reveal class="section-title">on dev.to <small><a href="https://dev.to/mackoverflow" target="_blank" rel="me noopener">@mackoverflow ↗</a></small></h2>
-      <div class="tiles">
-        <ArticleTile v-for="(a, i) in devtoExternal" :key="a.id" :to="a.url" :title="a.title" :description="a.description"
-          :date="a.published_at" :tags="a.tag_list" kind="dev.to" external :delay="i * 70" />
-      </div>
-    </section>
   </div>
 </template>
 
