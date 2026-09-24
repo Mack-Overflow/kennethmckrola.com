@@ -37,4 +37,12 @@ export const projects: Project[] = [
     repo: 'https://github.com/Mack-Overflow/oauth-toolkit',
     tags: ['oauth2', 'sso', 'nuxt', 'security'],
   },
+  {
+    name: 'Reactor Designs',
+    blurb:
+      'Rust API and Svelte UI for comparing and describing nuclear reactor designs, from large PWRs to small modular reactors like the NuScale SMR. Side-by-side specs, a description for each design, and containerized deployment.',
+    live: 'https://reactor-ui.onrender.com',
+    repo: 'https://github.com/Mack-Overflow/reactor-designs',
+    tags: ['rust', 'svelte', 'nuclear', 'docker'],
+  },
 ]
