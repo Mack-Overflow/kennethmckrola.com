@@ -282,7 +282,7 @@ function logout() { session.clear(); navigateTo('/login') }
             </div>
           </div>
 
-          <PostEditor v-show="!preview" v-model="body" :upload="upload" @log="say" />
+          <EditorPostEditor v-show="!preview" v-model="body" :upload="upload" @log="say" />
           <div v-if="preview" class="terminal">
             <div class="bar"><i /><i /><i /><span>preview · {{ slug || 'untitled' }}.md</span></div>
             <div class="body">
