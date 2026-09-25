@@ -1,10 +1,10 @@
 ---
-title: "Building a Master Search"
+title: "Building a 'Master Search'"
 description: "Developing a free-text search component that spans multiple tables and database connections"
 date: 2026-09-24
 kind: challenge
-tags: []
+tags: [nuxt, laravel, snowflake]
 draft: true
-devto: false
+devto: true
 ---
-
+dfdfsdfdf
