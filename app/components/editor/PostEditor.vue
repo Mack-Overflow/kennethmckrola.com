@@ -150,9 +150,12 @@ onBeforeUnmount(() => editor.value?.destroy())
 </template>
 
 <style>
+/* overflow must stay visible: with the terminal's overflow:hidden the panel becomes the sticky container and the
+   toolbar pins 56px down inside it, covering the first line of the document. */
+.pe.terminal { overflow: visible; }
 .pe .surface { min-height: 55vh; }
 .pe .editor-surface { outline: none; padding: 1.4rem 1.6rem; min-height: 55vh; max-width: none; font-size: 0.95rem; }
-.pe .toolbar { flex-wrap: wrap; gap: 2px; position: sticky; top: 56px; z-index: 5; background: #020805; }
+.pe .toolbar { flex-wrap: wrap; gap: 2px; position: sticky; top: 56px; z-index: 5; background: #020805; border-radius: var(--radius) var(--radius) 0 0; }
 .pe .tb { background: transparent; border: 1px solid transparent; border-radius: 4px; padding: 0.15rem 0.5rem; color: var(--green-dim); cursor: pointer; font-size: 0.78rem; }
 .pe .tb:hover { color: var(--green); border-color: var(--line-strong); }
 .pe .tb.on { color: #000; background: var(--green); }

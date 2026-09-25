@@ -16,10 +16,12 @@ const KINDS = ['challenge', 'project', 'note']
 interface PostRef { name: string; path: string; sha: string }
 const posts = ref<PostRef[]>([])
 const loadingPosts = ref(false)
+// Dev only: no token in the browser → read content/articles from disk via /api/dev/articles and never touch GitHub.
+const local = ref(false)
 
 // Current document
 const meta = reactive({
-  title: '', description: '', date: today(), kind: 'challenge', tags: '' as string, cover: '', draft: false, devto: false,
+  title: '', description: '', date: today(), kind: 'challenge', tags: [] as string[], cover: '', draft: false, devto: false,
   devto_id: undefined as number | undefined, devto_url: undefined as string | undefined,
 })
 const body = ref('')
@@ -45,16 +47,23 @@ watch(() => meta.title, (t) => { if (!slugTouched.value && !isExisting.value) sl
 watch([meta, body, slug], () => { if (ready.value) dirty.value = true }, { deep: true })
 
 onMounted(async () => {
-  if (!session.load()) return navigateTo('/login', { replace: true })
-  try {
-    const u = await gh.me()
-    if (u.login.toLowerCase() !== config.public.ownerLogin.toLowerCase()) throw new Error('wrong account')
-    session.user.value = u
-  } catch {
-    session.clear()
-    return navigateTo('/login', { replace: true })
+  const hasToken = !!session.load()
+  if (!hasToken && import.meta.dev) {
+    local.value = true
+    session.user.value = { login: 'local', avatar_url: '', name: null }
+    say('dev mode: no token → reading content/articles from disk. commits, uploads and deletes are disabled.')
+  } else {
+    if (!hasToken) return navigateTo('/login', { replace: true })
+    try {
+      const u = await gh.me()
+      if (u.login.toLowerCase() !== config.public.ownerLogin.toLowerCase()) throw new Error('wrong account')
+      session.user.value = u
+    } catch {
+      session.clear()
+      return navigateTo('/login', { replace: true })
+    }
+    say(`hello @${session.user.value?.login}. connected to ${config.public.repo}.`)
   }
-  say(`hello @${session.user.value?.login}. connected to ${config.public.repo}.`)
   await refreshPosts()
   window.addEventListener('keydown', onKey)
   window.addEventListener('beforeunload', onLeave)
@@ -70,7 +79,8 @@ function onKey(e: KeyboardEvent) {
 async function refreshPosts() {
   loadingPosts.value = true
   try {
-    posts.value = (await gh.listDir(DIR)).filter((f) => f.name.endsWith('.md')).map((f) => ({ name: f.name.replace(/\.md$/, ''), path: f.path, sha: f.sha })).sort((a, b) => a.name.localeCompare(b.name))
+    if (local.value) posts.value = (await $fetch<Array<{ name: string; path: string }>>('/api/dev/articles')).map((f) => ({ ...f, sha: 'local' }))
+    else posts.value = (await gh.listDir(DIR)).filter((f) => f.name.endsWith('.md')).map((f) => ({ name: f.name.replace(/\.md$/, ''), path: f.path, sha: f.sha })).sort((a, b) => a.name.localeCompare(b.name))
     say(`${posts.value.length} post(s) in ${DIR}/`)
   } catch (e: any) { say(`✗ could not list posts: ${e.message}`, 'err') }
   loadingPosts.value = false
@@ -79,7 +89,7 @@ async function refreshPosts() {
 function newPost() {
   if (dirty.value && !confirm('discard unsaved changes?')) return
   ready.value = false
-  Object.assign(meta, { title: '', description: '', date: today(), kind: 'challenge', tags: '', cover: '', draft: false, devto: false, devto_id: undefined, devto_url: undefined })
+  Object.assign(meta, { title: '', description: '', date: today(), kind: 'challenge', tags: [], cover: '', draft: false, devto: false, devto_id: undefined, devto_url: undefined })
   body.value = ''
   slug.value = ''
   slugTouched.value = false
@@ -94,12 +104,12 @@ async function openPost(p: PostRef) {
   if (dirty.value && !confirm('discard unsaved changes?')) return
   busy.value = true
   try {
-    const { text, sha } = await gh.getFile(p.path)
+    const { text, sha } = local.value ? { text: (await $fetch<{ text: string }>(`/api/dev/articles/${p.name}`)).text, sha: 'local' } : await gh.getFile(p.path)
     const { meta: m, body: b } = parseFrontmatter(text)
     ready.value = false
     Object.assign(meta, {
       title: String(m.title ?? ''), description: String(m.description ?? ''), date: String(m.date ?? today()),
-      kind: String(m.kind ?? 'challenge'), tags: Array.isArray(m.tags) ? m.tags.join(', ') : String(m.tags ?? ''),
+      kind: String(m.kind ?? 'challenge'), tags: Array.isArray(m.tags) ? m.tags.map(String) : String(m.tags ?? '').split(',').map((t) => t.trim()).filter(Boolean),
       cover: String(m.cover ?? ''), draft: m.draft === true, devto: m.devto === true,
       devto_id: typeof m.devto_id === 'number' ? m.devto_id : undefined, devto_url: m.devto_url ? String(m.devto_url) : undefined,
     })
@@ -121,7 +131,7 @@ function compose(): string {
     description: meta.description.trim(),
     date: meta.date,
     kind: meta.kind,
-    tags: meta.tags.split(',').map((t) => t.trim()).filter(Boolean),
+    tags: [...meta.tags],
     cover: meta.cover.trim() || undefined,
     draft: meta.draft,
     devto: meta.devto,
@@ -135,6 +145,7 @@ async function commit(asDraft?: boolean) {
   if (busy.value) return
   if (!meta.title.trim()) return say('✗ needs a title', 'err')
   if (!slug.value) return say('✗ needs a slug', 'err')
+  if (local.value) return say('✗ dev mode: not connected to github, nothing committed. (this is what would be written:)\n' + compose(), 'err')
   if (asDraft !== undefined) meta.draft = asDraft
   busy.value = true
   const path = `${DIR}/${slug.value}.md`
@@ -162,6 +173,7 @@ async function commit(asDraft?: boolean) {
 async function remove() {
   const p = posts.value.find((x) => x.name === slug.value)
   if (!p || !currentSha.value) return
+  if (local.value) return say('✗ dev mode: delete disabled', 'err')
   if (!confirm(`delete ${p.path} from the repo? this commits a deletion.`)) return
   busy.value = true
   try {
@@ -174,6 +186,7 @@ async function remove() {
 }
 
 async function upload(file: File): Promise<string> {
+  if (local.value) throw new Error('dev mode: uploads disabled')
   const folder = slug.value || 'misc'
   const name = `${Date.now().toString(36)}-${slugify(file.name.replace(/\.[^.]+$/, ''))}.${(file.name.split('.').pop() || 'png').toLowerCase()}`
   const path = `public/images/posts/${folder}/${name}`
@@ -216,7 +229,8 @@ function logout() { session.clear(); navigateTo('/login') }
       <header class="top">
         <NuxtLink to="/" class="brand"><span class="muted">~/</span>kennethmckrola<span class="muted">/editor</span></NuxtLink>
         <div class="spacer" />
-        <span v-if="session.user.value" class="muted small">
+        <span v-if="local" class="devbadge">dev · local files · read only</span>
+        <span v-else-if="session.user.value" class="muted small">
           <img v-if="session.user.value.avatar_url" :src="session.user.value.avatar_url" class="avatar" alt="" /> @{{ session.user.value.login }}
         </span>
         <button class="btn ghost sm" @click="preview = !preview">{{ preview ? 'edit' : 'preview' }} <kbd>⌘⇧P</kbd></button>
@@ -265,8 +279,8 @@ function logout() { session.clear(); navigateTo('/login') }
               <select v-model="meta.kind" class="input"><option v-for="k in KINDS" :key="k" :value="k">{{ k }}</option></select>
             </div>
             <div class="field">
-              <label>tags <span class="muted">(comma separated)</span></label>
-              <input v-model="meta.tags" class="input" placeholder="nuxt, performance, postgres" />
+              <label>tags <span class="muted">(comma or enter to add)</span></label>
+              <EditorTagInput v-model="meta.tags" placeholder="nuxt, performance, postgres" />
             </div>
             <div class="field span2">
               <label>cover image url <span class="muted">(optional)</span></label>
@@ -316,11 +330,13 @@ function logout() { session.clear(); navigateTo('/login') }
 .spacer { flex: 1; }
 .avatar { width: 18px; height: 18px; border-radius: 50%; display: inline-block; vertical-align: middle; border: 1px solid var(--line-strong); }
 .small { font-size: 0.78rem; }
+.devbadge { font-size: 0.72rem; color: #ffd97a; border: 1px dashed rgba(255, 217, 122, 0.5); border-radius: 4px; padding: 0.1rem 0.5rem; }
 kbd { font-size: 0.65rem; opacity: 0.6; border: 1px solid currentColor; border-radius: 3px; padding: 0 3px; margin-left: 2px; }
 .grid { display: grid; grid-template-columns: 260px 1fr; gap: 1.2rem; padding: 1.2rem 20px 3rem; flex: 1; max-width: 1400px; width: 100%; margin: 0 auto; }
 .side { display: flex; flex-direction: column; gap: 1rem; position: sticky; top: 72px; align-self: start; max-height: calc(100vh - 90px); }
+.side > .terminal:first-child { flex-shrink: 0; } /* the post list keeps its height; only the log gives way on short viewports */
 .list { display: flex; flex-direction: column; gap: 2px; max-height: 40vh; overflow: auto; padding: 0.5rem; }
-.post { text-align: left; background: transparent; border: 1px solid transparent; border-radius: 4px; padding: 0.3rem 0.6rem; color: var(--green-dim); cursor: pointer; font-size: 0.82rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.post { text-align: left; background: transparent; border: 1px solid transparent; border-radius: 4px; padding: 0.3rem 0.6rem; color: var(--green-dim); cursor: pointer; font-size: 0.82rem; word-break: break-all; line-height: 1.4; }
 .post:hover { color: var(--green); background: var(--green-faint); }
 .post.on { color: #000; background: var(--green); }
 .post.new { color: var(--green); border-color: var(--line-strong); border-style: dashed; margin-bottom: 0.4rem; }
