@@ -46,6 +46,7 @@ jobs:
       - name: Generate static site
         env:
           NUXT_PUBLIC_SITE_URL: https://kennethmckrola.com
+          NUXT_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NODE_OPTIONS: --max-old-space-size=4096
         run: npx nuxt generate
 

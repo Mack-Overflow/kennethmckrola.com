@@ -1,7 +1,7 @@
 export const profile = {
   name: 'Kenneth McKrola',
   handle: 'Mack-Overflow',
-  tagline: 'software engineer · builds APIs, tooling, and the occasional benchmark harness',
+  tagline: 'software engineer · production APIs, data platforms, and the dev tooling that keeps them fast',
   location: 'kennethmckrola.com',
 }
 

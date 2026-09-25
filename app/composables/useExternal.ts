@@ -17,6 +17,8 @@ export interface GhRepo {
   pushed_at: string
   fork: boolean
   topics?: string[]
+  /** Language composition from GET /repos/{owner}/{repo}/languages, in bytes, most-used first. */
+  languages: Record<string, number>
 }
 
 export function useDevtoArticles() {
@@ -30,11 +32,6 @@ export function useDevtoArticles() {
 }
 
 export function useGithubRepos() {
-  const { ownerLogin } = useRuntimeConfig().public
-  return useFetch<GhRepo[]>(`https://api.github.com/users/${ownerLogin}/repos?sort=pushed&per_page=30`, {
-    key: 'gh-repos',
-    default: () => [],
-    server: true,
-    transform: (repos) => repos.filter((r) => !r.fork).slice(0, 6),
-  })
+  // Served by server/api/github/repos.get.ts (cached; prerendered to static JSON at build).
+  return useFetch<GhRepo[]>('/api/github/repos', { key: 'gh-repos', default: () => [], server: true })
 }

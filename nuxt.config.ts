@@ -27,6 +27,8 @@ export default defineNuxtConfig({
   },
 
   runtimeConfig: {
+    // Optional; set NUXT_GITHUB_TOKEN at build time to raise the GitHub API rate limit. Never shipped to the client.
+    githubToken: '',
     public: {
       siteUrl: 'https://kennethmckrola.com',
       // The GitHub repo the editor commits to. Fine-grained PAT needs "Contents: read & write" on it.
@@ -50,7 +52,7 @@ export default defineNuxtConfig({
   nitro: {
     prerender: {
       crawlLinks: true,
-      routes: ['/', '/articles', '/projects', '/login', '/editor', '/robots.txt'],
+      routes: ['/', '/articles', '/projects', '/login', '/editor', '/robots.txt', '/api/github/repos'],
     },
   },
 

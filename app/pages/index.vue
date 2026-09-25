@@ -18,6 +18,7 @@ const feed = await useArticleFeed(6)
       <div class="hero-links">
         <a v-for="l in links" :key="l.href" :href="l.href" class="btn ghost sm" target="_blank" rel="me noopener">{{ l.label }} ↗</a>
       </div>
+      <SkillMarquee class="skills" />
       <p class="scroll-hint muted">scroll ↓</p>
     </section>
 
@@ -44,6 +45,7 @@ const feed = await useArticleFeed(6)
 .hero { min-height: calc(100vh - 56px); display: flex; flex-direction: column; justify-content: center; padding-top: 4rem; padding-bottom: 4rem; }
 .tagline { font-size: clamp(1rem, 1.8vw, 1.2rem); color: var(--green); max-width: 720px; min-height: 2em; }
 .hero-links { display: flex; gap: 0.6rem; flex-wrap: wrap; margin-top: 1rem; }
-.scroll-hint { margin-top: auto; font-size: 0.75rem; animation: bob 2.4s ease-in-out infinite; }
+.skills { margin-top: auto !important; margin-bottom: 2.5rem !important; }
+.scroll-hint { margin-top: 0; font-size: 0.75rem; animation: bob 2.4s ease-in-out infinite; }
 @keyframes bob { 50% { transform: translateY(6px); } }
 </style>
