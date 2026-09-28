@@ -15,5 +15,5 @@ If any failures occur in the process of creating a prospect record, we want to k
 
 ## The Path Forward
 
-\
+To begin, we create batches per 1k contacts to process at a time. These batches may consist entirely of leads that belong to the same user, or there may be multiple users in ownership. The trick is that we know which user's specific contact list settings they are identified by. These were all set up in data engineering and stored in Snowflake, to be processed by our application. \
 We store an auth token by which we identify their CRM app account, and need to attach it to each request.
