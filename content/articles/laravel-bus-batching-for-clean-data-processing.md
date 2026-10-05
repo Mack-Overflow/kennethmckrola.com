@@ -1,11 +1,20 @@
 ---
-title: "Laravel Bus Batching for Clean Data Processing"
-description: "How I utilized Snowflake & Laravel job batches to track data push statuses with no loss"
-date: 2026-09-28
+title: Laravel Bus Batching for Clean Data Processing
+description: >-
+  How I utilized Snowflake & Laravel job batches to track data push statuses
+  with no loss
+date: 2026-09-28T00:00:00.000Z
 kind: challenge
-tags: [laravel, snowflake, queue]
+tags:
+  - laravel
+  - snowflake
+  - queue
 draft: false
 devto: true
+devto_id: 4803050
+devto_url: >-
+  https://dev.to/mackoverflow/laravel-bus-batching-for-clean-data-processing-1oeh
+devto_hash: 2d57a17f9798
 ---
 ## The Feature
 
